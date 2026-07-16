@@ -1,5 +1,5 @@
 import { createDatastoreHistory } from '@all-the-apps/simulation/datastore';
 
-const history = createDatastoreHistory({ datastoreId: 'f37f5d9c-9cb5-4d65-9d2c-6c3e6c5b5f33', teamIds: ['france', 'argentina'] });
+const history = createDatastoreHistory({ datastoreId: 'c546afd3-7579-473d-89a6-91178a87fd74', teamIds: ['france', 'argentina'] });
 export const saveSimulationRun = history.save;
 export const listSimulationHistory = history.list;
