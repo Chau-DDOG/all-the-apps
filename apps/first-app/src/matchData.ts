@@ -1,36 +1,4 @@
-export type TeamId = 'argentina' | 'spain';
-export type PlayerRole = 'GK' | 'DEF' | 'MID' | 'FWD';
-
-export interface Player {
-    id: string;
-    name: string;
-    shortName: string;
-    number: number;
-    role: PlayerRole;
-    goalWeight: number;
-    assistWeight: number;
-    cardWeight: number;
-    note?: string;
-}
-
-export interface TeamProjection {
-    id: TeamId;
-    name: string;
-    code: string;
-    flag: string;
-    formation: string;
-    color: string;
-    accent: string;
-    expectedGoals: number;
-    players: Player[];
-}
-
-export interface AvailabilityNote {
-    team: TeamId;
-    player: string;
-    status: 'Out' | 'Doubt' | 'Cleared';
-    detail: string;
-}
+import type { AvailabilityNote, MatchForecast, TeamProjection } from '@all-the-apps/simulation';
 
 export const matchDetails = {
     competition: 'FIFA World Cup 2026 · Final',
@@ -41,7 +9,7 @@ export const matchDetails = {
     snapshot: '15 July 2026 · 10:00 PM ET',
 };
 
-export const teams: Record<TeamId, TeamProjection> = {
+export const teams: Record<'argentina' | 'spain', TeamProjection> = {
     argentina: {
         id: 'argentina',
         name: 'Argentina',
@@ -49,8 +17,9 @@ export const teams: Record<TeamId, TeamProjection> = {
         flag: '🇦🇷',
         formation: '4–4–1–1',
         color: '#8ed8f8',
-        accent: '#e8f8ff',
         expectedGoals: 1.34,
+        expectedCards: 2.15,
+        penaltyConversion: 0.77,
         players: [
             { id: 'arg-martinez', name: 'Emiliano Martínez', shortName: 'E. Martínez', number: 23, role: 'GK', goalWeight: 0.01, assistWeight: 0.03, cardWeight: 0.25 },
             { id: 'arg-molina', name: 'Nahuel Molina', shortName: 'Molina', number: 26, role: 'DEF', goalWeight: 0.2, assistWeight: 0.58, cardWeight: 0.82 },
@@ -72,8 +41,9 @@ export const teams: Record<TeamId, TeamProjection> = {
         flag: '🇪🇸',
         formation: '4–3–3',
         color: '#ffcc49',
-        accent: '#fff2c7',
         expectedGoals: 1.43,
+        expectedCards: 1.72,
+        penaltyConversion: 0.76,
         players: [
             { id: 'esp-simon', name: 'Unai Simón', shortName: 'Unai Simón', number: 23, role: 'GK', goalWeight: 0.01, assistWeight: 0.03, cardWeight: 0.18 },
             { id: 'esp-llorente', name: 'Marcos Llorente', shortName: 'M. Llorente', number: 18, role: 'DEF', goalWeight: 0.34, assistWeight: 0.62, cardWeight: 0.65, note: 'Projected for Porro' },
@@ -145,3 +115,17 @@ export const sources = [
         url: 'https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/articles/leonardo-balerdi-baja-copa-mundial-argentina',
     },
 ];
+
+export const forecast: MatchForecast = {
+    id: 'world-cup-final-2026',
+    brandLabel: 'Final Forecast',
+    simulationTitle: 'One possible final',
+    winnerPhrase: 'lift the cup',
+    lineupDescription: 'Built from each semifinal XI, recovery time, and the latest availability reporting. These are projections—not confirmed teams.',
+    methodologyDescription: 'Goals use a Poisson model from a narrow expected-goals baseline. Scorers, assists, and cards are weighted by role and player profile. Each run is illustrative—not betting advice or an official prediction.',
+    initialSeed: 260719,
+    details: { ...matchDetails, stageLabel: 'FINAL' },
+    teams: [teams.argentina, teams.spain],
+    availability,
+    sources,
+};

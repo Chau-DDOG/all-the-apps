@@ -5,12 +5,7 @@ import { listSimulationHistory, saveSimulationRun } from './simulationHistory.ba
 import './styles.css';
 
 function App() {
-    return (
-        <ForecastApp
-            forecast={forecast}
-            persistence={{ save: saveSimulationRun, list: listSimulationHistory }}
-        />
-    );
+    return <ForecastApp forecast={forecast} persistence={{ save: saveSimulationRun, list: listSimulationHistory }} />;
 }
 
 export default App;
