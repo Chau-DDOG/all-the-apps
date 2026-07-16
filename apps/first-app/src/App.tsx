@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { availability, matchDetails, sources, teams, type TeamProjection } from './matchData';
 import { createSimulation, type MatchEvent } from './simulation';
+import {
+    listSimulationHistory,
+    saveSimulationRun,
+    type SavedSimulationRun,
+} from './simulationHistory.backend';
 import './styles.css';
 
 function TeamMark({ team, compact = false }: { team: TeamProjection; compact?: boolean }) {
@@ -67,20 +73,180 @@ function TimelineEvent({ event }: { event: MatchEvent }) {
     );
 }
 
+function formatRunTime(value: string): string {
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(new Date(value));
+}
+
+function HistoryDrawer({
+    open,
+    onClose,
+    onSelect,
+    currentSeed,
+}: {
+    open: boolean;
+    onClose: () => void;
+    onSelect: (run: SavedSimulationRun) => void;
+    currentSeed: number;
+}) {
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const drawerRef = useRef<HTMLElement>(null);
+    const historyQuery = useInfiniteQuery({
+        queryKey: ['simulation-history'],
+        queryFn: ({ pageParam }) => listSimulationHistory(pageParam),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => lastPage.nextOffset,
+        enabled: open,
+    });
+    const runs = historyQuery.data?.pages.flatMap((page) => page.runs) ?? [];
+
+    useEffect(() => {
+        if (!open) return;
+        closeButtonRef.current?.focus();
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') onClose();
+            if (event.key !== 'Tab') return;
+
+            const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
+                'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+            );
+            if (!focusable?.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose, open]);
+
+    if (!open) return null;
+
+    return (
+        <div className="drawer-layer">
+            <button className="drawer-backdrop" type="button" aria-label="Close simulation history" onClick={onClose} />
+            <aside ref={drawerRef} className="history-drawer" role="dialog" aria-modal="true" aria-labelledby="history-title">
+                <header className="history-drawer__header">
+                    <div>
+                        <span className="kicker">Datastore archive</span>
+                        <h2 id="history-title">Simulation runs</h2>
+                    </div>
+                    <button ref={closeButtonRef} className="drawer-close" type="button" onClick={onClose} aria-label="Close simulation history">×</button>
+                </header>
+
+                <div className="history-drawer__body">
+                    {historyQuery.isLoading && <div className="history-state">Loading saved runs…</div>}
+                    {historyQuery.isError && (
+                        <div className="history-state history-state--error">
+                            <strong>History is unavailable.</strong>
+                            <span>The simulation still works; retry the datastore connection in a moment.</span>
+                            <button type="button" onClick={() => void historyQuery.refetch()}>Retry</button>
+                        </div>
+                    )}
+                    {!historyQuery.isLoading && !historyQuery.isError && runs.length === 0 && (
+                        <div className="history-state">
+                            <strong>No saved runs yet.</strong>
+                            <span>Close this panel and run the match to create the first one.</span>
+                        </div>
+                    )}
+                    {runs.length > 0 && (
+                        <div className="history-runs">
+                            {runs.map((run, index) => {
+                                const simulation = run.simulation;
+                                const hasPenalties = simulation.argentinaPenalties !== undefined;
+                                return (
+                                    <button
+                                        className={`history-run ${simulation.seed === currentSeed ? 'history-run--active' : ''}`}
+                                        type="button"
+                                        key={run.runId}
+                                        onClick={() => onSelect(run)}
+                                    >
+                                        <span className="history-run__index">#{String(index + 1).padStart(2, '0')}</span>
+                                        <span className="history-run__score">
+                                            <span>🇦🇷</span><strong>{simulation.argentinaGoals}</strong>
+                                            <i>—</i>
+                                            <strong>{simulation.spainGoals}</strong><span>🇪🇸</span>
+                                        </span>
+                                        <span className="history-run__meta">
+                                            <strong>{teams[simulation.winner].name} win{hasPenalties ? ' on pens' : ''}</strong>
+                                            <small>{formatRunTime(run.createdAt)} · {simulation.events.length} events</small>
+                                        </span>
+                                        <span className="history-run__arrow">↗</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {historyQuery.hasNextPage && (
+                        <button
+                            className="load-more"
+                            type="button"
+                            disabled={historyQuery.isFetchingNextPage}
+                            onClick={() => void historyQuery.fetchNextPage()}
+                        >
+                            {historyQuery.isFetchingNextPage ? 'Loading…' : 'Load more runs'}
+                        </button>
+                    )}
+                </div>
+                <footer className="history-drawer__footer">
+                    <span className="live-dot" />
+                    Backed by Datadog datastore
+                </footer>
+            </aside>
+        </div>
+    );
+}
+
 function App() {
     const [run, setRun] = useState(1);
     const [simulation, setSimulation] = useState(() => createSimulation(260719));
+    const [historyOpen, setHistoryOpen] = useState(false);
+    const [restoredAt, setRestoredAt] = useState<string>();
+    const queryClient = useQueryClient();
+    const saveMutation = useMutation({
+        mutationFn: saveSimulationRun,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['simulation-history'] }),
+    });
     const winner = teams[simulation.winner];
     const hasPenalties = simulation.argentinaPenalties !== undefined && simulation.spainPenalties !== undefined;
 
     const runSimulation = () => {
         const nextRun = run + 1;
+        const nextSimulation = createSimulation(Date.now() + nextRun * 7919);
         setRun(nextRun);
-        setSimulation(createSimulation(Date.now() + nextRun * 7919));
+        setRestoredAt(undefined);
+        setSimulation(nextSimulation);
+        saveMutation.mutate(nextSimulation);
+    };
+
+    const closeHistory = useCallback(() => setHistoryOpen(false), []);
+    const restoreSimulation = (savedRun: SavedSimulationRun) => {
+        setSimulation(savedRun.simulation);
+        setRestoredAt(savedRun.createdAt);
+        closeHistory();
     };
 
     return (
         <main className="app-shell">
+            <button className="history-tab" type="button" onClick={() => setHistoryOpen(true)} aria-label="Open saved simulation runs">
+                <span>Runs</span>
+                <strong>↗</strong>
+            </button>
+            <HistoryDrawer
+                open={historyOpen}
+                onClose={closeHistory}
+                onSelect={restoreSimulation}
+                currentSeed={simulation.seed}
+            />
             <header className="topbar">
                 <a className="brand" href="#top" aria-label="Final XI home">
                     <span className="brand__glyph">XI</span>
@@ -120,7 +286,9 @@ function App() {
             <section className="simulation-section" aria-labelledby="simulation-title">
                 <div className="section-heading">
                     <div>
-                        <span className="kicker">Match lab · Run {run.toString().padStart(2, '0')}</span>
+                        <span className="kicker">
+                            {restoredAt ? `History replay · ${formatRunTime(restoredAt)}` : `Match lab · Run ${run.toString().padStart(2, '0')}`}
+                        </span>
                         <h2 id="simulation-title">One possible final</h2>
                     </div>
                     <button className="simulate-button" type="button" onClick={runSimulation}>
@@ -156,7 +324,12 @@ function App() {
                                 <span className="kicker">Event tape</span>
                                 <h3>Goals, assists & cards</h3>
                             </div>
-                            <span className="seed">Seed {simulation.seed.toString().slice(-6)}</span>
+                            <div className="simulation-status">
+                                {saveMutation.isPending && <span className="save-status">Saving…</span>}
+                                {saveMutation.isSuccess && !restoredAt && <span className="save-status save-status--saved">Saved</span>}
+                                {saveMutation.isError && <span className="save-status save-status--error">Not saved</span>}
+                                <span className="seed">Seed {simulation.seed.toString().slice(-6)}</span>
+                            </div>
                         </header>
                         {simulation.events.length > 0 ? (
                             <ol className="timeline">
