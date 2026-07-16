@@ -2,18 +2,6 @@
 
 This app is part of a Datadog Apps workspace. Shared guidance lives at the workspace root.
 
-## Read relevant guides
-- Embedded app context / routing / storage: ../../docs/agents/runtime-context.md
-- Backend functions (*.backend.ts): ../../docs/agents/backend-functions.md
-- Local dev / auth / build / upload: ../../docs/agents/build-upload-auth.md
-- Workspace overview: ../../AGENTS.md
+Run locally with `npm run dev -w apps/what-could-have-been`; build with `npm run build -w apps/what-could-have-been`.
 
-## This app
-- This app owns its unique `apps.identifier` in `./vite.config.ts` — never share or copy it.
-- Run locally: `npm run dev -w apps/what-could-have-been` (from the workspace root) or `npm run dev` (from this directory).
-- Upload: `npm run upload -w apps/what-could-have-been`.
-
-## Rules
-- Keep secret-dependent work and privileged API calls in backend functions.
-- Never hardcode API keys, app keys, or OAuth tokens.
-- Prefer the generated npm scripts; this workspace uses npm.
+Keep secret-dependent work in backend functions and never hardcode credentials.
