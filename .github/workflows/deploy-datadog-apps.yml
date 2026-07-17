@@ -1,0 +1,92 @@
+name: Deploy Datadog Apps
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-datadog-apps.yml'
+  push:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-datadog-apps.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-datadog-apps-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Typecheck & lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+
+  changed:
+    name: Detect changed apps
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      any: ${{ steps.detect.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        env:
+          CONTAINER: 'apps'
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          base="$BEFORE"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base=$(git hash-object -t tree /dev/null)
+          fi
+          matrix=$(git diff --name-only "$base" "$AFTER" -- "$CONTAINER/" \
+            | awk -F/ 'NF > 1 {print $2}' \
+            | sort -u \
+            | jq -R . \
+            | jq -cs '{app: map(select(length > 0))}')
+          count=$(echo "$matrix" | jq '.app | length')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          if [ "$count" -gt 0 ]; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Changed apps: $matrix"
+
+  upload:
+    name: Upload ${{ matrix.app }}
+    needs: changed
+    if: needs.changed.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.changed.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Upload ${{ matrix.app }}
+        env:
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+        run: npm run upload -w apps/${{ matrix.app }}
