@@ -1,8 +1,79 @@
-:root {
+:root,
+.first-app-theme[data-theme='light'] {
+    color-scheme: light;
+    --page: #f7f0e3;
+    --surface: #fffaf0;
+    --ink: #182015;
+    --muted: #6f7667;
+    --line: #ded4bf;
+    --accent: #496d0b;
+}
+
+.first-app-theme[data-theme='dark'] {
+    color-scheme: dark;
     --page: #10120f;
     --surface: #181b17;
     --ink: #f4f5ef;
     --muted: #92988d;
     --line: #30352d;
     --accent: #d9ff3f;
+}
+
+.first-app-theme {
+    min-height: 100vh;
+    background: var(--page);
+    color: var(--ink);
+    transition:
+        background-color 180ms ease,
+        color 180ms ease;
+}
+
+.theme-toggle {
+    position: fixed;
+    z-index: 40;
+    top: 1rem;
+    right: clamp(1rem, 5vw, 3.6rem);
+    display: inline-flex;
+    gap: .2rem;
+    padding: .25rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    box-shadow: 0 14px 36px color-mix(in srgb, var(--ink) 13%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.theme-toggle__option {
+    padding: .48rem .72rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.theme-toggle__option[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--page);
+}
+
+.first-app-theme .topbar__meta {
+    margin-right: 10.5rem;
+}
+
+@media (max-width: 620px) {
+    .theme-toggle {
+        top: auto;
+        right: 1rem;
+        bottom: 4.5rem;
+    }
+
+    .first-app-theme .topbar__meta {
+        margin-right: 0;
+    }
 }
