@@ -25,8 +25,8 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -42,7 +42,7 @@ jobs:
       matrix: ${{ steps.detect.outputs.matrix }}
       any: ${{ steps.detect.outputs.any }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - id: detect
@@ -59,6 +59,9 @@ jobs:
           matrix=$(git diff --name-only "$base" "$AFTER" -- "$CONTAINER/" \
             | awk -F/ 'NF > 1 {print $2}' \
             | sort -u \
+            | while IFS= read -r name; do
+                if [ -d "$CONTAINER/$name" ]; then echo "$name"; fi
+              done \
             | jq -R . \
             | jq -cs '{app: map(select(length > 0))}')
           count=$(echo "$matrix" | jq '.app | length')
@@ -79,14 +82,15 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.changed.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - name: Upload ${{ matrix.app }}
         env:
+          APP: ${{ matrix.app }}
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: npm run upload -w apps/${{ matrix.app }}
+        run: npm run upload -w "apps/$APP"
