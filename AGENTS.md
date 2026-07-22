@@ -20,6 +20,8 @@ This is a Datadog Apps npm workspace. It can hold multiple apps, each independen
 
 Run `npm init @datadog/apps` (or `npm init @datadog/apps --app <name>`) from inside this workspace. It auto-detects the workspace root, scaffolds `apps/<name>/`, and installs dependencies once at the root — no need to run `npm install` again per app.
 
+After adding, removing, or renaming any app or package workspace, run `npm install` from the workspace root and commit the resulting root `package-lock.json`. Before finishing, run `npm ci --ignore-scripts` from the workspace root; a new workspace is not complete if this command reports that its package is missing from the lockfile. Confirm the lockfile contains both an `apps/<name>` or `packages/<name>` package entry and its corresponding `node_modules/<package-name>` workspace link.
+
 ## Managing dependencies
 
 Declare each dependency in the workspace that imports it, even when npm physically hoists it into the root `node_modules`:
@@ -29,7 +31,7 @@ Declare each dependency in the workspace that imports it, even when npm physical
 - Root build tooling: run `npm install --save-dev <dependency>` from the workspace root without a workspace flag.
 - Host-owned singletons such as React belong in a shared package's `peerDependencies`; apps that import React still declare it directly.
 
-Run `npm install` and `npm ci` only from the workspace root. Commit the single root `package-lock.json`; do not create per-app lockfiles or maintain app-level `node_modules` directories. npm's default hoisted strategy shares compatible versions at the root and may create nested copies only when versions conflict, so code must never rely on a dependency's physical install location.
+Run `npm install` and `npm ci` only from the workspace root. Every workspace or dependency change must update and commit the single root `package-lock.json`; do not create per-app lockfiles or maintain app-level `node_modules` directories. Never finish a workspace or dependency change without a successful root `npm ci --ignore-scripts`. npm's default hoisted strategy shares compatible versions at the root and may create nested copies only when versions conflict, so code must never rely on a dependency's physical install location.
 
 ## Sharing code between apps
 

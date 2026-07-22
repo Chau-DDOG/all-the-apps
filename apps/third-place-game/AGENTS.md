@@ -17,3 +17,5 @@ This app is part of a Datadog Apps workspace. Shared guidance lives at the works
 - Keep secret-dependent work and privileged API calls in backend functions.
 - Never hardcode API keys, app keys, or OAuth tokens.
 - Prefer the generated npm scripts; this workspace uses npm.
+- After changing this app's `package.json` or workspace location, run `npm install` from the workspace root and commit the root `package-lock.json`.
+- Before finishing a workspace or dependency change, run `npm ci --ignore-scripts` from the workspace root. Do not create an app-level lockfile.
