@@ -32,10 +32,10 @@ export default defineConfig({
                 sourcemaps: {
                     minifiedPathPrefix: '/',
                     releaseVersion: version,
-                    service: 'tour-forecaster',
+                service: 'ski-budget',
                 },
             },
-            metadata: { name: 'Tour Forecaster' },
+            metadata: { name: 'Ski Budget' },
             metrics: { enable: hasDatadogApiKeys },
         }),
     ],
