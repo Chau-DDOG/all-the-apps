@@ -12,6 +12,7 @@ This is a Datadog Apps npm workspace. It can hold multiple apps, each independen
 
 - Run an app locally: `npm run dev -w apps/<name>` (from the workspace root), or `npm run dev` from inside the app directory.
 - Build one app: `npm run build -w apps/<name>`.
+- Build an ephemeral preview for an existing App Builder app: `npm run preview-upload -w apps/<name> -- --app-id <app-definition-id> --expected-commit <full-git-sha>`.
 - Upload one app: `npm run upload -w apps/<name>`.
 - Build, typecheck, or lint the whole workspace from the root: `npm run build`, `npm run typecheck`, `npm run lint`.
 - Each app owns its unique `apps.identifier` in `apps/<name>/vite.config.ts` — never share or copy it between apps.
@@ -21,6 +22,8 @@ This is a Datadog Apps npm workspace. It can hold multiple apps, each independen
 Run `npm init @datadog/apps` (or `npm init @datadog/apps --app <name>`) from inside this workspace. It auto-detects the workspace root, scaffolds `apps/<name>/`, and installs dependencies once at the root — no need to run `npm install` again per app.
 
 After adding, removing, or renaming any app or package workspace, run `npm install` from the workspace root and commit the resulting root `package-lock.json`. Before finishing, run `npm ci --ignore-scripts` from the workspace root; a new workspace is not complete if this command reports that its package is missing from the lockfile. Confirm the lockfile contains both an `apps/<name>` or `packages/<name>` package entry and its corresponding `node_modules/<package-name>` workspace link.
+
+Every generated app must retain its `preview-upload` script and `scripts/preview-upload.mjs` helper. Preview uploads are ephemeral and return an `app_definition`; never replace them with the normal upload, deploy, or publish command.
 
 ## Managing dependencies
 

@@ -82,13 +82,29 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.changed.outputs.matrix) }}
     steps:
+      - name: Check Datadog deploy secrets
+        id: auth
+        env:
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+        run: |
+          if [ -n "$DD_API_KEY" ] && [ -n "$DD_APP_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping upload because DATADOG_API_KEY / DATADOG_APP_KEY are not configured. Set them under Settings > Secrets and variables > Actions, or run: npm init @datadog/apps --set-secrets"
+          fi
       - uses: actions/checkout@v6
+        if: steps.auth.outputs.configured == 'true'
       - uses: actions/setup-node@v6
+        if: steps.auth.outputs.configured == 'true'
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+        if: steps.auth.outputs.configured == 'true'
       - name: Upload ${{ matrix.app }}
+        if: steps.auth.outputs.configured == 'true'
         env:
           APP: ${{ matrix.app }}
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
