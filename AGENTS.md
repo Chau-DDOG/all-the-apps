@@ -12,7 +12,7 @@ This is a Datadog Apps npm workspace. It can hold multiple apps, each independen
 
 - Run an app locally: `npm run dev -w apps/<name>` (from the workspace root), or `npm run dev` from inside the app directory.
 - Build one app: `npm run build -w apps/<name>`.
-- Build an ephemeral preview for an existing App Builder app: `npm run preview-upload -w apps/<name> -- --app-id <app-definition-id> --expected-commit <full-git-sha>`.
+- Build an ephemeral preview: `npm run preview-upload -w apps/<name> -- --expected-commit <full-git-sha>`. Add `--app-id <app-definition-id>` to target a saved App Builder app.
 - Upload one app: `npm run upload -w apps/<name>`.
 - Build, typecheck, or lint the whole workspace from the root: `npm run build`, `npm run typecheck`, `npm run lint`.
 - Each app owns its unique `apps.identifier` in `apps/<name>/vite.config.ts` — never share or copy it between apps.

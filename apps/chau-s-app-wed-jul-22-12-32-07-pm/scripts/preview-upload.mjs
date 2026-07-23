@@ -13,14 +13,12 @@ const readArgument = (name) => {
 
 const appId = readArgument('--app-id');
 if (
-  !appId ||
+  appId &&
   !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     appId,
   )
 ) {
-  console.error(
-    'preview-upload requires --app-id <existing App Builder definition UUID>.',
-  );
+  console.error('--app-id must be an existing App Builder definition UUID.');
   process.exit(1);
 }
 
@@ -48,7 +46,8 @@ const result = spawnSync(vite, ['build'], {
   stdio: 'inherit',
   env: {
     ...process.env,
-    DD_APPS_PREVIEW_APP_ID: appId,
+    DD_APPS_PREVIEW: '1',
+    ...(appId ? { DD_APPS_PREVIEW_APP_ID: appId } : {}),
     DD_APPS_PUBLISH: '0',
     DD_APPS_UPLOAD_ASSETS: '1',
   },
