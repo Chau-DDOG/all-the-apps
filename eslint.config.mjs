@@ -35,7 +35,7 @@ export default [
         },
     },
     {
-        files: ['**/vite.config.ts', '**/scripts/preview-upload.mjs'],
+        files: ['**/vite.config.ts'],
         languageOptions: {
             globals: globals.node,
         },
