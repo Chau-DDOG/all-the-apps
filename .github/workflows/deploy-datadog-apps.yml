@@ -109,6 +109,15 @@ jobs:
             '{app_path: $app_path, name: $name, commit_sha: $commit_sha}' \
             > "$output/preview-metadata.json"
       - run: npm ci
+      # TEMPORARY: force preview workspaces onto the archive-output canary until
+      # the capability ships in a stable @datadog/vite-plugin release.
+      - name: Pin preview plugin canary
+        env:
+          APP: ${{ matrix.app }}
+          CONTAINER: 'apps'
+        run: |
+          npm pkg set "devDependencies.@datadog/vite-plugin=3.2.7-dev.2" --workspace "$CONTAINER/$APP"
+          npm install --package-lock=false --ignore-scripts
       - name: Build preview archive
         env:
           APP: ${{ matrix.app }}
