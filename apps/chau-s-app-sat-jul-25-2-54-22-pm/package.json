@@ -1,0 +1,16 @@
+{
+  "name": "chau-s-app-sat-jul-25-2-54-22-pm",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "upload": "DD_APPS_UPLOAD_ASSETS=1 vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
