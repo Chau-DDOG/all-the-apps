@@ -66,20 +66,15 @@ jobs:
           failed=0
           report_failure() {
             local app_path="$1"
-            local payload
-            payload=$(jq -n \
-              --arg repository "$REPOSITORY_URL" \
-              --arg commit_sha "$EXPECTED_SHA" \
-              --arg app_path "$app_path" \
-              '{repository: $repository, commit_sha: $commit_sha, app_path: $app_path}')
             if ! curl --fail-with-body --show-error --silent \
-              --request PUT \
               -H "DD-API-KEY: $DD_API_KEY" \
               -H "DD-APPLICATION-KEY: $DD_APP_KEY" \
               -H "test-drive-code-in-ab-preview: 1" \
-              -H "Content-Type: application/json" \
-              --data "$payload" \
-              "https://api.datad0g.com/api/unstable/app-builder-code/apps/preview-results"; then
+              -F "preview_repository=$REPOSITORY_URL" \
+              -F "preview_commit_sha=$EXPECTED_SHA" \
+              -F "preview_app_path=$app_path" \
+              -F "preview_status=failed" \
+              "https://api.datad0g.com/api/unstable/app-builder-code/apps/upload-preview"; then
               echo "::error::Could not report the failed preview for $app_path"
             fi
           }
