@@ -22,7 +22,6 @@ Run `npm init @datadog/apps` (or `npm init @datadog/apps --app <name>`) from ins
 
 After adding, removing, or renaming any app or package workspace, run `npm install` from the workspace root and commit the resulting root `package-lock.json`. Before finishing, run `npm ci --ignore-scripts` from the workspace root; a new workspace is not complete if this command reports that its package is missing from the lockfile. Confirm the lockfile contains both an `apps/<name>` or `packages/<name>` package entry and its corresponding `node_modules/<package-name>` workspace link.
 
-
 ## Managing dependencies
 
 Declare each dependency in the workspace that imports it, even when npm physically hoists it into the root `node_modules`:

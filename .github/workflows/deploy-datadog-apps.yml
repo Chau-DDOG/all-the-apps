@@ -6,7 +6,6 @@ on:
       - 'apps/**'
       - 'packages/**'
       - '.github/workflows/deploy-datadog-apps.yml'
-      - '.github/workflows/upload-datadog-app-previews.yml'
   push:
     paths:
       - 'apps/**'
@@ -34,106 +33,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-
-  preview-changed:
-    name: Detect preview apps
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.detect.outputs.matrix }}
-      any: ${{ steps.detect.outputs.any }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - id: detect
-        env:
-          CONTAINER: 'apps'
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          if git diff --quiet "$BASE" "$HEAD" -- packages/; then
-            names=$(git diff --name-only "$BASE" "$HEAD" -- "$CONTAINER/" \
-              | awk -F/ 'NF > 1 {print $2}' \
-              | sort -u)
-          else
-            names=$(find "$CONTAINER" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
-          fi
-          matrix=$(printf '%s\n' "$names" \
-            | while IFS= read -r name; do
-                if [ -n "$name" ] && [ -d "$CONTAINER/$name" ]; then echo "$name"; fi
-              done \
-            | jq -R . \
-            | jq -cs '{app: map(select(length > 0))}')
-          count=$(echo "$matrix" | jq '.app | length')
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          if [ "$count" -gt 0 ]; then
-            echo "any=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "any=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "Preview apps: $matrix"
-
-  preview-build:
-    name: Build preview ${{ matrix.app }}
-    needs: [validate, preview-changed]
-    if: needs.preview-changed.outputs.any == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.preview-changed.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-      - name: Write preview metadata
-        env:
-          APP: ${{ matrix.app }}
-          CONTAINER: 'apps'
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          output="$RUNNER_TEMP/datadog-preview"
-          mkdir -p "$output"
-          jq -n \
-            --arg app_path "$CONTAINER/$APP" \
-            --arg name "$APP" \
-            --arg commit_sha "$HEAD_SHA" \
-            '{app_path: $app_path, name: $name, commit_sha: $commit_sha}' \
-            > "$output/preview-metadata.json"
-      - run: npm ci
-      # TEMPORARY: force preview workspaces onto the archive-output canary until
-      # the capability ships in a stable @datadog/vite-plugin release.
-      - name: Pin preview plugin canary
-        env:
-          APP: ${{ matrix.app }}
-          CONTAINER: 'apps'
-        run: |
-          npm pkg set "devDependencies.@datadog/vite-plugin=3.2.7-dev.2" --workspace "$CONTAINER/$APP"
-          npm install --package-lock=false --ignore-scripts
-      - name: Build preview archive
-        env:
-          APP: ${{ matrix.app }}
-          CONTAINER: 'apps'
-        run: |
-          set -euo pipefail
-          output="$RUNNER_TEMP/datadog-preview"
-          DD_APPS_ARCHIVE_OUTPUT="$output/app.zip" npm run build -w "$CONTAINER/$APP"
-          test -s "$output/app.zip"
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: datadog-app-preview-${{ matrix.app }}
-          path: ${{ runner.temp }}/datadog-preview
-          if-no-files-found: error
-          retention-days: 1
 
   changed:
     name: Detect changed apps
@@ -183,29 +82,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.changed.outputs.matrix) }}
     steps:
-      - name: Check Datadog deploy secrets
-        id: auth
-        env:
-          DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
-        run: |
-          if [ -n "$DD_API_KEY" ] && [ -n "$DD_APP_KEY" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping upload because DATADOG_API_KEY / DATADOG_APP_KEY are not configured. Set them under Settings > Secrets and variables > Actions, or run: npm init @datadog/apps --set-secrets"
-          fi
       - uses: actions/checkout@v6
-        if: steps.auth.outputs.configured == 'true'
       - uses: actions/setup-node@v6
-        if: steps.auth.outputs.configured == 'true'
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-        if: steps.auth.outputs.configured == 'true'
       - name: Upload ${{ matrix.app }}
-        if: steps.auth.outputs.configured == 'true'
         env:
           APP: ${{ matrix.app }}
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
