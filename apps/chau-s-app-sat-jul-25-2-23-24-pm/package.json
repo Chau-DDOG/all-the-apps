@@ -1,0 +1,19 @@
+{
+  "name": "chau-s-app-sat-jul-25-2-23-24-pm",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "upload": "DD_APPS_UPLOAD_ASSETS=1 vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@datadog/action-catalog": "^0.0.3",
+    "@datadog/apps-backend": "^0.0.1",
+    "@tanstack/react-query": "^5.101.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
