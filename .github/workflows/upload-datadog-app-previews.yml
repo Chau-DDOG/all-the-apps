@@ -16,7 +16,7 @@ concurrency:
 jobs:
   upload-preview:
     name: Upload completed PR previews
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Check Datadog preview secrets
@@ -54,7 +54,7 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           pattern: datadog-app-preview-*
           path: ${{ runner.temp }}/datadog-previews
-      - name: Upload preview archives
+      - name: Upload or report preview results
         if: steps.auth.outputs.configured == 'true' && steps.artifacts.outputs.any == 'true'
         env:
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
@@ -63,6 +63,26 @@ jobs:
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
+          failed=0
+          report_failure() {
+            local app_path="$1"
+            local payload
+            payload=$(jq -n \
+              --arg repository "$REPOSITORY_URL" \
+              --arg commit_sha "$EXPECTED_SHA" \
+              --arg app_path "$app_path" \
+              '{repository: $repository, commit_sha: $commit_sha, app_path: $app_path}')
+            if ! curl --fail-with-body --show-error --silent \
+              --request PUT \
+              -H "DD-API-KEY: $DD_API_KEY" \
+              -H "DD-APPLICATION-KEY: $DD_APP_KEY" \
+              -H "test-drive-code-in-ab-preview: 1" \
+              -H "Content-Type: application/json" \
+              --data "$payload" \
+              "https://api.datad0g.com/api/unstable/app-builder-code/apps/preview-results"; then
+              echo "::error::Could not report the failed preview for $app_path"
+            fi
+          }
           while IFS= read -r -d '' metadata; do
             directory=$(dirname "$metadata")
             archive="$directory/app.zip"
@@ -73,8 +93,13 @@ jobs:
               echo "::error::Artifact commit $artifact_sha does not match workflow commit $EXPECTED_SHA"
               exit 1
             fi
-            test -f "$archive"
-            curl --fail-with-body --show-error --silent \
+            if [ ! -s "$archive" ]; then
+              echo "::error::Preview build did not produce app.zip for $app_path"
+              report_failure "$app_path"
+              failed=1
+              continue
+            fi
+            if ! curl --fail-with-body --show-error --silent \
               -H "DD-API-KEY: $DD_API_KEY" \
               -H "DD-APPLICATION-KEY: $DD_APP_KEY" \
               -H "test-drive-code-in-ab-preview: 1" \
@@ -83,5 +108,10 @@ jobs:
               -F "preview_repository=$REPOSITORY_URL" \
               -F "preview_commit_sha=$EXPECTED_SHA" \
               -F "preview_app_path=$app_path" \
-              "https://api.datad0g.com/api/unstable/app-builder-code/apps/upload-preview"
+              "https://api.datad0g.com/api/unstable/app-builder-code/apps/upload-preview"; then
+              echo "::error::Preview upload failed for $app_path"
+              report_failure "$app_path"
+              failed=1
+            fi
           done < <(find "$RUNNER_TEMP/datadog-previews" -name preview-metadata.json -print0)
+          exit "$failed"

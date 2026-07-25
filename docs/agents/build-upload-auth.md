@@ -11,6 +11,13 @@ This scaffold uses npm. Prefer the scripts in `package.json` over ad hoc command
 - `npm run lint` and `npm run lint:fix` run ESLint.
 - `npm run preview` serves the built output locally.
 
+## Temporary preview canary
+
+This workspace intentionally pins and overrides `@datadog/vite-plugin` to
+`3.2.7-dev.2`. Pull-request previews require the canary-only
+`DD_APPS_ARCHIVE_OUTPUT` behavior. Keep the override until that capability
+ships in a stable plugin, then remove this note and return to the stable release.
+
 ## Auth behavior
 
 - OAuth is the default for local Datadog calls when API/app keys are absent.

@@ -93,8 +93,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - name: Build preview archive
+      - name: Write preview metadata
         env:
           APP: ${{ matrix.app }}
           CONTAINER: 'apps'
@@ -103,14 +102,24 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/datadog-preview"
           mkdir -p "$output"
-          DD_APPS_ARCHIVE_OUTPUT="$output/app.zip" npm run build -w "$CONTAINER/$APP"
           jq -n \
             --arg app_path "$CONTAINER/$APP" \
             --arg name "$APP" \
             --arg commit_sha "$HEAD_SHA" \
             '{app_path: $app_path, name: $name, commit_sha: $commit_sha}' \
             > "$output/preview-metadata.json"
+      - run: npm ci
+      - name: Build preview archive
+        env:
+          APP: ${{ matrix.app }}
+          CONTAINER: 'apps'
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/datadog-preview"
+          DD_APPS_ARCHIVE_OUTPUT="$output/app.zip" npm run build -w "$CONTAINER/$APP"
+          test -s "$output/app.zip"
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: datadog-app-preview-${{ matrix.app }}
           path: ${{ runner.temp }}/datadog-preview
