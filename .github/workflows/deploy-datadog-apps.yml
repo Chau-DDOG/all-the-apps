@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: deploy-datadog-apps-${{ github.ref }}
@@ -41,6 +42,7 @@ jobs:
     outputs:
       matrix: ${{ steps.detect.outputs.matrix }}
       any: ${{ steps.detect.outputs.any }}
+      bits-chat-id: ${{ steps.bits-chat.outputs.chat-id }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -72,6 +74,34 @@ jobs:
             echo "any=false" >> "$GITHUB_OUTPUT"
           fi
           echo "Changed apps: $matrix"
+      - name: Find the Bits chat for this merge
+        id: bits-chat
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pull_requests=$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
+          chat_id=$(jq -r --arg sha "$GITHUB_SHA" '
+            [ .[] | select(.merged_at != null) ]
+            | ((map(select(.merge_commit_sha == $sha)) | first) // first // {})
+            | (.body // "")
+            | (try capture(
+                "<!--[[:space:]]*dd-meta[[:space:]]+(?<metadata>\\{[^\\r\\n]*\\})[[:space:]]*-->"
+              ).metadata catch "")
+            | (try fromjson catch {})
+            | select(
+                (.source == "chat" or .sourceType == "chat")
+                and (.resourceId | type == "string")
+              )
+            | .resourceId // empty
+          ' <<< "$pull_requests")
+          if [[ -n "$chat_id" && ! "$chat_id" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$ ]]; then
+            echo "::warning::Ignoring an invalid Bits chat ID in the merged pull request metadata."
+            chat_id=
+          fi
+          echo "chat-id=$chat_id" >> "$GITHUB_OUTPUT"
 
   upload:
     name: Upload ${{ matrix.app }}
@@ -93,4 +123,5 @@ jobs:
           APP: ${{ matrix.app }}
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+          DD_APPS_BITS_CHAT_ID: ${{ needs.changed.outputs.bits-chat-id }}
         run: npm run upload -w "apps/$APP"
