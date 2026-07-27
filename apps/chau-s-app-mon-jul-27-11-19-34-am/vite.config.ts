@@ -2,9 +2,10 @@ import { datadogVitePlugin } from "@datadog/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import rootManifest from "../../package.json";
 import { version } from "./package.json";
 
-process.env.DD_SITE ||= "datadoghq.com";
+process.env.DD_SITE ||= rootManifest.datadogApps?.site || "datadoghq.com";
 process.env.DATADOG_SITE ||= process.env.DD_SITE;
 
 const hasDatadogApiKeys = Boolean(
@@ -22,7 +23,10 @@ export default defineConfig({
     datadogVitePlugin({
       logLevel: "debug",
       auth: {
-        site: process.env.DD_SITE || "datadoghq.com",
+        site:
+          process.env.DD_SITE ||
+          rootManifest.datadogApps?.site ||
+          "datadoghq.com",
         apiKey: process.env.DD_API_KEY,
         appKey: process.env.DD_APP_KEY,
       },
