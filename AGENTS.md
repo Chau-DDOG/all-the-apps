@@ -22,6 +22,31 @@ Run `npm init @datadog/apps` (or `npm init @datadog/apps --app <name>`) from ins
 
 After adding, removing, or renaming any app or package workspace, run `npm install` from the workspace root and commit the resulting root `package-lock.json`. Before finishing, run `npm ci --ignore-scripts` from the workspace root; a new workspace is not complete if this command reports that its package is missing from the lockfile. Confirm the lockfile contains both an `apps/<name>` or `packages/<name>` package entry and its corresponding `node_modules/<package-name>` workspace link.
 
+### Required lockfile gate before opening or updating a PR
+
+The root `package-lock.json` is generated output shared by every app and package. Never edit it by hand, splice JSON into it, or resolve a lockfile merge conflict line by line.
+
+Bits Code must complete this procedure after making all workspace changes and before opening or updating a pull request:
+
+1. Fetch and incorporate the latest `origin/master`. Do this before regenerating the lockfile so concurrent apps already merged into `master` remain represented.
+2. If `package-lock.json` conflicts or cannot be parsed, restore its version from the latest `origin/master`; keep the app and package directories from both sides of the merge.
+3. From the workspace root, regenerate the lockfile from the workspaces currently present:
+
+   ```sh
+   npm install --package-lock-only --ignore-scripts
+   ```
+
+4. Perform a clean installation from that generated lockfile:
+
+   ```sh
+   npm ci --ignore-scripts
+   ```
+
+5. Confirm the new workspace has both an `apps/<name>` or `packages/<name>` record and its `node_modules/<package-name>` workspace link in the root lockfile.
+6. Commit the workspace files and root `package-lock.json` together. Do not open or update the pull request if lockfile generation or `npm ci` fails.
+
+If `master` changes again before the pull request merges, repeat the entire procedure against the new `origin/master`. A previously successful check against an older base is not sufficient.
+
 ## Managing dependencies
 
 Declare each dependency in the workspace that imports it, even when npm physically hoists it into the root `node_modules`:
