@@ -5,11 +5,15 @@ on:
     paths:
       - 'apps/**'
       - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/deploy-datadog-apps.yml'
   push:
     paths:
       - 'apps/**'
       - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/deploy-datadog-apps.yml'
 
 permissions:
@@ -21,6 +25,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  lockfile:
+    name: Lockfile consistency
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+
   validate:
     name: Typecheck & lint
     if: github.event_name == 'pull_request'
@@ -105,8 +121,10 @@ jobs:
 
   upload:
     name: Upload ${{ matrix.app }}
-    needs: changed
-    if: needs.changed.outputs.any == 'true'
+    needs:
+      - changed
+      - lockfile
+    if: needs.changed.outputs.any == 'true' && needs.lockfile.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
