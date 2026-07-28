@@ -1,0 +1,151 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.root.light {
+  background-color: #f5f7fa;
+  color: #1a1d23;
+}
+
+.root.dark {
+  background-color: #0f1117;
+  color: #e8eaf0;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.light .card {
+  background-color: #ffffff;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dark .card {
+  background-color: #1c1f2a;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.theme-toggle {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.light .theme-toggle {
+  background-color: #f0f2f5;
+  color: #444;
+}
+
+.light .theme-toggle:hover {
+  background-color: #e2e6eb;
+}
+
+.dark .theme-toggle {
+  background-color: #2a2f3e;
+  color: #c0c4d0;
+}
+
+.dark .theme-toggle:hover {
+  background-color: #343a4d;
+}
+
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.greeting {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wave {
+  font-size: 56px;
+  animation: wave 1.8s ease-in-out infinite;
+  transform-origin: 70% 70%;
+  display: inline-block;
+}
+
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%            { transform: rotate(14deg); }
+  20%            { transform: rotate(-8deg); }
+  30%            { transform: rotate(14deg); }
+  40%            { transform: rotate(-4deg); }
+  50%            { transform: rotate(10deg); }
+}
+
+.greeting h1 {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.greeting p {
+  font-size: 15px;
+  opacity: 0.6;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 20px;
+  opacity: 0.8;
+  transition: background-color 0.3s ease;
+}
+
+.light .badge {
+  background-color: #f0f2f5;
+  color: #555;
+}
+
+.dark .badge {
+  background-color: #2a2f3e;
+  color: #a0a6b8;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+}
