@@ -39,11 +39,11 @@ export default defineConfig({
         sourcemaps: {
           minifiedPathPrefix: "/",
           releaseVersion: version,
-          service: "chau-s-app-tue-jul-28-11-26-20-am",
+          service: "madrid-weather",
         },
       },
       metadata: {
-        name: "Chau's App Tue, Jul 28, 11:26:20 am",
+        name: "Madrid Weather",
       },
       metrics: {
         enable: hasDatadogApiKeys,

@@ -1,4 +1,4 @@
-# chau-s-app-tue-jul-28-11-26-20-am
+# madrid-weather
 
 This is a Datadog App scaffolded for the all-the-apps workspace. Shared guidance lives at the workspace root.
 
@@ -12,8 +12,8 @@ This is a Datadog App scaffolded for the all-the-apps workspace. Shared guidance
 ## This app
 
 - This app owns its unique `apps.identifier` in `./vite.config.ts` - never share or copy it.
-- Run locally: `npm run dev -w apps/chau-s-app-tue-jul-28-11-26-20-am` from the workspace root or `npm run dev` from this directory.
-- Upload: `npm run upload -w apps/chau-s-app-tue-jul-28-11-26-20-am`.
+- Run locally: `npm run dev -w apps/madrid-weather` from the workspace root or `npm run dev` from this directory.
+- Upload: `npm run upload -w apps/madrid-weather`.
 
 ## Rules
 
