@@ -20,6 +20,8 @@ This is a Datadog Apps npm workspace. It can hold multiple apps, each independen
 
 Run `npm init @datadog/apps` (or `npm init @datadog/apps --app <name>`) from inside this workspace. It auto-detects the workspace root, scaffolds `apps/<name>/`, and installs dependencies once at the root — no need to run `npm install` again per app.
 
+Before scaffolding a new app, sync your branch with the main branch to avoid stale lockfile entries: `git fetch origin master && git merge --no-ff origin/master`. This ensures `npm install` runs against the current workspace state rather than a stale snapshot that may include deleted apps.
+
 After adding, removing, or renaming any app or package workspace, run `npm install` from the workspace root and commit the resulting root `package-lock.json`. Before finishing, run `npm ci --ignore-scripts` from the workspace root; a new workspace is not complete if this command reports that its package is missing from the lockfile. Confirm the lockfile contains both an `apps/<name>` or `packages/<name>` package entry and its corresponding `node_modules/<package-name>` workspace link.
 
 ### Required lockfile gate before opening or updating a PR
