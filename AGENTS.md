@@ -65,6 +65,17 @@ If an app's `npm run typecheck` cannot resolve the shared package's types, add a
 
 Apps use OAuth by default for local development and uploads. Set `DD_API_KEY` and `DD_APP_KEY` in your environment to use API-key based auth instead.
 
+Always resolve the Datadog site from `DD_SITE`, falling back to the workspace's `datadogApps.site` value when necessary. Set `DATADOG_SITE` from that resolved value for tools that use the legacy variable name. Never assume or hardcode `datadoghq.com`; this workspace may target staging (`datad0g.com`) or another Datadog site.
+
+Each app's Vite configuration should follow this pattern:
+
+```ts
+import rootManifest from "../../package.json";
+
+process.env.DD_SITE ||= rootManifest.datadogApps?.site;
+process.env.DATADOG_SITE ||= process.env.DD_SITE;
+```
+
 ## Publishing this workspace to a source code provider
 
 When the user asks to "publish", "push up", or "create a repo" for this workspace:
