@@ -107,7 +107,7 @@ const forecastDays: ForecastDay[] = [
     lowC: 22,
     highF: 97,
     lowF: 72,
-    summary: "Trip starts with classic Barcelona summer heat.",
+    summary: "Trip starts with classic London summer heat.",
     dress: "Pack a light day outfit up top in your luggage.",
     heatLevel: "very-hot",
     source: "Forecast",
@@ -215,7 +215,7 @@ const forecastDays: ForecastDay[] = [
     lowC: 21,
     highF: 95,
     lowF: 70,
-    summary: "Planning outlook: hot, dry Barcelona summer pattern.",
+    summary: "Planning outlook: hot, dry London summer pattern.",
     dress: "Repeat lightweight clothes; no rain layer expected.",
     heatLevel: "hot",
     source: "Outlook",
@@ -299,7 +299,7 @@ const weeklyTakeaways = [
     label: "Trip week 2",
     range: "Aug 10-Aug 16",
     headline: "Still summer, slightly less severe",
-    detail: "Forecast confidence drops after Aug 11, but Barcelona's August pattern remains hot and mostly dry.",
+    detail: "Forecast confidence drops after Aug 11, but London's August pattern remains hot and mostly dry.",
   },
 ];
 
@@ -326,7 +326,7 @@ const packingGroups: PackingGroup[] = [
   },
   {
     name: "Shoes",
-    cue: "Barcelona is walkable, hot, and hard on untested shoes.",
+    cue: "London is walkable, hot, and hard on untested shoes.",
     items: [
       { id: "sneakers", label: "Broken-in breathable walking sneakers" },
       { id: "sandals", label: "Supportive walking sandals" },
@@ -418,10 +418,10 @@ function App() {
     <main className="app-shell">
       <header className="trip-header" aria-labelledby="page-title">
         <div>
-          <p className="eyebrow">Barcelona trip planner</p>
+          <p className="eyebrow">London trip planner</p>
           <h1 id="page-title">Weather, outfits, and packing</h1>
           <p className="intro">
-            A three-week Barcelona weather view for Jul 28-Aug 17, plus a
+            A three-week London weather view for Jul 28-Aug 17, plus a
             two-week packing checklist for a trip starting next week.
           </p>
         </div>
@@ -511,7 +511,7 @@ function App() {
       <section className="split-section" aria-labelledby="dress-title">
         <div className="dress-panel">
           <p className="eyebrow">How to dress</p>
-          <h2 id="dress-title">Simple rules for Barcelona heat</h2>
+          <h2 id="dress-title">Simple rules for London heat</h2>
           <ul>
             {dressRules.map((rule) => (
               <li key={rule}>{rule}</li>
@@ -526,7 +526,7 @@ function App() {
             {packedItemIds.size} of {packingTotal}
           </progress>
           <p>
-            Checklist tuned for a two-week Barcelona trip from {tripDates}, with
+            Checklist tuned for a two-week London trip from {tripDates}, with
             one laundry stop.
           </p>
         </div>
