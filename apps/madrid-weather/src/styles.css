@@ -60,6 +60,7 @@ input {
   gap: 20px;
   align-items: end;
   padding: 24px 0 2px;
+  background: red;
 }
 
 .eyebrow {
